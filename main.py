@@ -73,8 +73,8 @@ def col(dir):
     return db.get_or_create_collection(
         name=dir.replace("/", ""),
         metadata={"hnsw:space": "cosine"},
-        embedding_function=embedding_function,
-    )  # type: ignore
+        embedding_function=embedding_function, # type: ignore
+    )
 
 
 @app.post("/start")
