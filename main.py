@@ -73,19 +73,27 @@ def col(dir):
     return db.get_or_create_collection(
         name=dir.replace("/", ""),
         metadata={"hnsw:space": "cosine"},
-        embedding_function=embedding_function, # type: ignore
+        embedding_function=embedding_function,  # type: ignore
     )
 
 
 @app.post("/start")
 def start(watch: Watch):
     collection = col(watch.dir)
+
+    if watch.dir in watches:
+        return {
+            "dir": watch.dir,
+            "files": collection.count(),
+        }
+
     files = git_files(watch.dir)
     for file in files:
         executor.submit(read_file, collection, file)
     watches[watch.dir] = observer.schedule(
         FileChangeHandler(collection), watch.dir, recursive=True
     )
+
     return {
         "dir": watch.dir,
         "files": len(files),
@@ -94,6 +102,9 @@ def start(watch: Watch):
 
 @app.post("/stop")
 def stop(watch: Watch):
+    if watch.dir not in watches:
+        return watch
+
     observer.unschedule(watches[watch.dir])
     return watch
 
