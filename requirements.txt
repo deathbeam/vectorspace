@@ -2,3 +2,4 @@ chromadb
 watchdog
 fastapi
 uvicorn[standard]
+sentence-transformers
