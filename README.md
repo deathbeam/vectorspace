@@ -1,9 +1,15 @@
 # vectorspace
 
+## Install
+
+```bash
+pip install python-vectorspace
+```
+
 ## Run
 
 ```bash
-python vectorspace/app.py
+vectorspace
 ```
 
 ## Development

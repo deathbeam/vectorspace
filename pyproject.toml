@@ -3,7 +3,7 @@ dependencies = {file = ["requirements.txt"]}
 
 [project]
 dynamic = ["dependencies"]
-name = "vectorspace"
+name = "python-vectorspace"
 version = "0.0.1"
 authors = [
   { name="deathbeam", email="slusnucky@gmail.com" },
