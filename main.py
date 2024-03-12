@@ -1,4 +1,5 @@
 import chromadb
+import uvicorn
 from chromadb import Collection, GetResult
 import subprocess
 import os
@@ -141,3 +142,7 @@ def query(query: Query):
         query_texts=[query.text],
         n_results=query.max,
     )
+
+
+if __name__ == "__main__":
+    uvicorn.run(app)

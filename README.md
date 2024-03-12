@@ -3,6 +3,12 @@
 ## Run
 
 ```bash
+python main.py
+```
+
+## Development
+
+```bash
 uvicorn main:app --reload
 ```
 
