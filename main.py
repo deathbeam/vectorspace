@@ -1,4 +1,5 @@
 import chromadb
+from chromadb import Collection, GetResult
 import subprocess
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -6,10 +7,10 @@ from chromadb.utils import embedding_functions
 from fastapi import FastAPI
 from pydantic import BaseModel
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import PatternMatchingEventHandler
 
 
-def git_files(dir):
+def all_files(collection: Collection, dir):
     files = (
         subprocess.run(
             ["git", "-C", dir, "ls-files", "--full-name"], capture_output=True
@@ -17,15 +18,32 @@ def git_files(dir):
         .stdout.decode()
         .split("\n")
     )
-    return [os.path.join(dir, file) for file in files]
+
+    files = [os.path.join(dir, file) for file in files if "/.git" not in file]
+    files = [file for file in files if os.path.isfile(file)]
+    existing: GetResult = collection.get(include=["metadatas"])
+
+    out = []
+    for file in files:
+        if file not in existing["ids"]:
+            out.append(file)
+            continue
+
+        existing_file_index = existing["ids"].index(file)
+        existing_metadata = existing["metadatas"][existing_file_index]
+        if not existing_metadata:
+            out.append(file)
+            continue
+
+        existing_mtime = float(existing_metadata.get("mtime", 0))
+        mtime = os.path.getmtime(file)
+        if mtime > existing_mtime:
+            out.append(file)
+
+    return out
 
 
-def read_file(collection, file):
-    if "/.git" in file:
-        return
-
-    if not os.path.isfile(file):
-        return
+def read_file(collection: Collection, file: str):
     try:
         file_contents = open(file).read()
     except:
@@ -34,6 +52,7 @@ def read_file(collection, file):
     print(file)
     collection.add(
         documents=[file_contents],
+        metadatas=[{"mtime": os.path.getmtime(file)}],
         ids=[file],
     )
 
@@ -47,8 +66,9 @@ class Query(Watch):
     max: int
 
 
-class FileChangeHandler(FileSystemEventHandler):
-    def __init__(self, collection):
+class FileChangeHandler(PatternMatchingEventHandler):
+    def __init__(self, collection: Collection):
+        super().__init__(ignore_patterns=["*/.git/*"], ignore_directories=True)
         self.collection = collection
 
     def on_modified(self, event):
@@ -87,9 +107,10 @@ def start(watch: Watch):
             "files": collection.count(),
         }
 
-    files = git_files(watch.dir)
+    files = all_files(collection, watch.dir)
     for file in files:
         executor.submit(read_file, collection, file)
+
     watches[watch.dir] = observer.schedule(
         FileChangeHandler(collection), watch.dir, recursive=True
     )
