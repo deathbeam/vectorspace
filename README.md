@@ -3,13 +3,13 @@
 ## Run
 
 ```bash
-python main.py
+python vectorspace/app.py
 ```
 
 ## Development
 
 ```bash
-uvicorn main:app --reload
+uvicorn vectorspace.app:app --reload
 ```
 
 ## API docs

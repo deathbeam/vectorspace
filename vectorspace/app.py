@@ -79,7 +79,7 @@ class FileChangeHandler(PatternMatchingEventHandler):
         read_file(self.collection, event.src_path)
 
 
-app = FastAPI()
+app = FastAPI(title="vectorspace")
 db = chromadb.PersistentClient(path=os.getenv("HOME") + "/.cache/chromadb")
 embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="multi-qa-MiniLM-L6-cos-v1"
@@ -143,6 +143,8 @@ def query(query: Query):
         n_results=query.max,
     )
 
+def main():
+    uvicorn.run(app)
 
 if __name__ == "__main__":
-    uvicorn.run(app)
+    main()
