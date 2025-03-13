@@ -1,6 +1,6 @@
 [project]
 name = "python-vectorspace"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="deathbeam", email="slusnucky@gmail.com" },
 ]

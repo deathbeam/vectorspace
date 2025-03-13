@@ -49,7 +49,7 @@ def all_files(collection: Collection, dir):
 def read_file(collection: Collection, file: str):
     try:
         file_contents = open(file).read()
-    except:
+    except Exception as _:
         return
 
     print(file)
@@ -68,10 +68,12 @@ class Query(Watch):
     text: str
     max: int
 
+
 class QueryData(BaseModel):
     filename: str
     content: str
     score: float
+
 
 class FileChangeHandler(PatternMatchingEventHandler):
     def __init__(self, collection: Collection):
@@ -146,7 +148,7 @@ def count(watch: Watch) -> int:
 def query(query: Query) -> List[QueryData]:
     start(query)
 
-    response : QueryResult = col(query.dir).query(
+    response: QueryResult = col(query.dir).query(
         query_texts=[query.text],
         n_results=query.max,
     )
@@ -158,14 +160,15 @@ def query(query: Query) -> List[QueryData]:
         document = response["documents"][0][i]
         distance = response["distances"][0][i]
 
-        out.append(QueryData(
-            filename=id,
-            content=document,
-            score=max(0.0, min(1.0, 1.0 - (distance / 2.0)))
-        ))
+        out.append(
+            QueryData(
+                filename=id,
+                content=document,
+                score=max(0.0, min(1.0, 1.0 - (distance / 2.0))),
+            )
+        )
 
     return out
-
 
 def main():
     uvicorn.run(app)

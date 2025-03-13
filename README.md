@@ -3,7 +3,7 @@
 ## Install
 
 ```bash
-pip install python-vectorspace
+pipx install python-vectorspace
 ```
 
 ## Run
@@ -15,7 +15,19 @@ vectorspace
 ## Development
 
 ```bash
-uvicorn vectorspace.app:app --reload
+uv run -m vectorspace.app
+```
+
+or
+
+```bash
+uv pip install -e .
+```
+
+and then
+
+```bash
+vectorspace
 ```
 
 ## API docs
