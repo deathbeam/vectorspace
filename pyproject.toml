@@ -21,3 +21,6 @@ Issues = "https://github.com/deathbeam/vectorspace/issues"
 
 [project.scripts]
 vectorspace = "vectorspace.app:main"
+
+[tool.setuptools]
+license-files = []
