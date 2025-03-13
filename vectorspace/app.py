@@ -1,6 +1,8 @@
+from typing import List
 import chromadb
+from chromadb.api.types import IncludeEnum
 import uvicorn
-from chromadb import Collection, GetResult
+from chromadb import Collection, GetResult, QueryResult
 import subprocess
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -22,7 +24,7 @@ def all_files(collection: Collection, dir):
 
     files = [os.path.join(dir, file) for file in files if "/.git" not in file]
     files = [file for file in files if os.path.isfile(file)]
-    existing: GetResult = collection.get(include=["metadatas"])
+    existing: GetResult = collection.get(include=[IncludeEnum.metadatas])
 
     out = []
     for file in files:
@@ -66,6 +68,10 @@ class Query(Watch):
     text: str
     max: int
 
+class QueryData(BaseModel):
+    filename: str
+    content: str
+    score: float
 
 class FileChangeHandler(PatternMatchingEventHandler):
     def __init__(self, collection: Collection):
@@ -76,7 +82,7 @@ class FileChangeHandler(PatternMatchingEventHandler):
         if event.is_directory:
             return
 
-        read_file(self.collection, event.src_path)
+        read_file(self.collection, str(event.src_path))
 
 
 app = FastAPI(title="vectorspace")
@@ -132,16 +138,34 @@ def stop(watch: Watch):
 
 
 @app.post("/count")
-def count(watch: Watch):
+def count(watch: Watch) -> int:
     return col(watch.dir).count()
 
 
 @app.post("/query")
-def query(query: Query):
-    return col(query.dir).query(
+def query(query: Query) -> List[QueryData]:
+    start(query)
+
+    response : QueryResult = col(query.dir).query(
         query_texts=[query.text],
         n_results=query.max,
     )
+
+    out = []
+
+    for i in range(len(response["ids"][0])):
+        id = response["ids"][0][i]
+        document = response["documents"][0][i]
+        distance = response["distances"][0][i]
+
+        out.append(QueryData(
+            filename=id,
+            content=document,
+            score=max(0.0, min(1.0, 1.0 - (distance / 2.0)))
+        ))
+
+    return out
+
 
 def main():
     uvicorn.run(app)
