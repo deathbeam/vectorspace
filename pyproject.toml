@@ -7,11 +7,6 @@ authors = [
 description = "Directory file watcher for automatically creating and querying vector embeddings."
 readme = "README.md"
 requires-python = ">=3.13"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "chromadb>=0.6.3",
     "fastapi>=0.115.11",
