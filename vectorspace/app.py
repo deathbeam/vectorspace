@@ -1,3 +1,4 @@
+import threading
 from typing import List
 import chromadb
 from chromadb.api.types import IncludeEnum
@@ -11,6 +12,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
+import time
 
 
 def all_files(collection: Collection, dir):
@@ -48,16 +50,30 @@ def all_files(collection: Collection, dir):
 
 def read_file(collection: Collection, file: str):
     try:
-        file_contents = open(file).read()
-    except Exception as _:
-        return
+        # Skip files larger than 1MB to avoid performance issues
+        if os.path.getsize(file) > 1024 * 1024:
+            print(f"Skipping large file: {file}")
+            return
 
-    print(file)
-    collection.add(
-        documents=[file_contents],
-        metadatas=[{"mtime": os.path.getmtime(file)}],
-        ids=[file],
-    )
+        # Skip binary files by checking for null bytes
+        with open(file, "rb") as f:
+            content = f.read(1024)  # Read first 1KB to check
+            if b"\x00" in content:
+                print(f"Skipping binary file: {file}")
+                return
+
+        with open(file, "r", encoding="utf-8", errors="ignore") as f:
+            file_contents = f.read()
+
+        print(f"Indexing: {file}")
+        collection.add(
+            documents=[file_contents],
+            metadatas=[{"mtime": os.path.getmtime(file)}],
+            ids=[file],
+        )
+    except Exception as e:
+        print(f"Error processing file {file}: {str(e)}")
+        return
 
 
 class Watch(BaseModel):
@@ -89,21 +105,39 @@ class FileChangeHandler(PatternMatchingEventHandler):
 
 app = FastAPI(title="vectorspace")
 db = chromadb.PersistentClient(path=os.getenv("HOME") + "/.cache/chromadb")
-embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name="multi-qa-MiniLM-L6-cos-v1"
-)
+embedding_function = embedding_functions.DefaultEmbeddingFunction()
 observer = Observer()
 observer.start()
 executor = ThreadPoolExecutor(50)
 watches = {}
+watch_last_used = {}  # Track when each watch was last used
+watch_cleanup_interval = 300  # 5 minutes in seconds
 
 
 def col(dir):
+    watch_last_used[dir] = time.time()
     return db.get_or_create_collection(
         name=dir.replace("/", ""),
         metadata={"hnsw:space": "cosine"},
         embedding_function=embedding_function,  # type: ignore
     )
+
+
+def cleanup_inactive_watches():
+    while True:
+        time.sleep(60)  # Check every minute
+        current_time = time.time()
+        inactive_dirs = []
+        for dir_path, last_used in list(watch_last_used.items()):
+            if current_time - last_used > watch_cleanup_interval:
+                inactive_dirs.append(dir_path)
+
+        for dir_path in inactive_dirs:
+            print(f"Auto-stopping inactive watch for: {dir_path}")
+            stop(Watch(dir=dir_path))
+
+
+threading.Thread(target=cleanup_inactive_watches, daemon=True).start()
 
 
 @app.post("/start")
@@ -136,6 +170,9 @@ def stop(watch: Watch):
         return watch
 
     observer.unschedule(watches[watch.dir])
+    del watches[watch.dir]
+    if watch.dir in watch_last_used:
+        del watch_last_used[watch.dir]
     return watch
 
 
@@ -170,8 +207,10 @@ def query(query: Query) -> List[QueryData]:
 
     return out
 
+
 def main():
     uvicorn.run(app)
+
 
 if __name__ == "__main__":
     main()

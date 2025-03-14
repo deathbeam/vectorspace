@@ -1,6 +1,6 @@
 [project]
 name = "python-vectorspace"
-version = "0.0.3"
+version = "0.0.4"
 authors = [
   { name="deathbeam", email="slusnucky@gmail.com" },
 ]
@@ -10,8 +10,6 @@ requires-python = ">=3.13"
 dependencies = [
     "chromadb>=0.6.3",
     "fastapi>=0.115.11",
-    "sentence-transformers>=3.4.1",
-    "uvicorn>=0.34.0",
     "watchdog>=6.0.0",
 ]
 
@@ -21,6 +19,9 @@ Issues = "https://github.com/deathbeam/vectorspace/issues"
 
 [project.scripts]
 vectorspace = "vectorspace.app:main"
+
+[tool.uv]
+package = true
 
 [tool.setuptools]
 license-files = []
