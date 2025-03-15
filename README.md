@@ -1,21 +1,15 @@
 # vectorspace
 
-## Install
-
-```bash
-pipx install python-vectorspace
-```
-
 ## Run
 
 ```bash
-vectorspace
+pipx run python-vectorspace
 ```
 
 ## Development
 
 ```bash
-uv run -m vectorspace.app
+uv run vectorspace
 ```
 
 or
