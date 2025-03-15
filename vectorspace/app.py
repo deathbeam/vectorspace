@@ -52,21 +52,16 @@ def read_file(collection: Collection, file: str):
     try:
         # Skip files larger than 1MB to avoid performance issues
         if os.path.getsize(file) > 1024 * 1024:
-            print(f"Skipping large file: {file}")
             return
 
-        # Skip binary files by checking for null bytes
-        with open(file, "rb") as f:
-            content = f.read(1024)  # Read first 1KB to check
-            if b"\x00" in content:
-                print(f"Skipping binary file: {file}")
-                return
-
         with open(file, "r", encoding="utf-8", errors="ignore") as f:
-            file_contents = f.read()
+            file_contents = f.read(1024)
+            if "\0" in file_contents:  # Check for null bytes, indicating binary
+                return
+            file_contents += f.read()
 
         print(f"Indexing: {file}")
-        collection.add(
+        collection.upsert(
             documents=[file_contents],
             metadatas=[{"mtime": os.path.getmtime(file)}],
             ids=[file],
@@ -101,6 +96,19 @@ class FileChangeHandler(PatternMatchingEventHandler):
             return
 
         read_file(self.collection, str(event.src_path))
+
+    def on_created(self, event):
+        if event.is_directory:
+            return
+
+        read_file(self.collection, str(event.src_path))
+
+    def on_deleted(self, event):
+        if event.is_directory:
+            return
+
+        print(f"File deleted: {event.src_path}")
+        self.collection.delete(ids=[str(event.src_path)])
 
 
 app = FastAPI(title="vectorspace")
