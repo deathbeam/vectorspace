@@ -1,7 +1,6 @@
 import threading
 from typing import List
 import chromadb
-from chromadb.api.types import IncludeEnum
 import uvicorn
 from chromadb import Collection, GetResult, QueryResult
 import subprocess
@@ -26,7 +25,7 @@ def all_files(collection: Collection, dir):
 
     files = [os.path.join(dir, file) for file in files if "/.git" not in file]
     files = [file for file in files if os.path.isfile(file)]
-    existing: GetResult = collection.get(include=[IncludeEnum.metadatas])
+    existing: GetResult = collection.get(include=["metadatas"])
 
     out = []
     for file in files:

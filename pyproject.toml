@@ -1,6 +1,6 @@
 [project]
 name = "python-vectorspace"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
   { name="deathbeam", email="slusnucky@gmail.com" },
 ]
@@ -8,7 +8,7 @@ description = "Directory file watcher for automatically creating and querying ve
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "chromadb>=0.6.3",
+    "chromadb>=1.0.16",
     "fastapi>=0.115.11",
     "watchdog>=6.0.0",
 ]
