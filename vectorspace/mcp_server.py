@@ -1,5 +1,7 @@
 import sys
 from mcp.server.fastmcp import FastMCP
+
+from .logger import setup_logger
 from .core import VectorspaceCore
 
 
@@ -8,11 +10,7 @@ vectorspace_core = VectorspaceCore()
 
 
 @mcp.tool()
-def vectorspace_search(
-    query: str,
-    directory: str,
-    max_results: int = 10
-) -> str:
+def vectorspace_search(query: str, directory: str, max_results: int = 10) -> str:
     """
     Semantic search through workspace using vector embeddings.
 
@@ -30,17 +28,18 @@ def vectorspace_search(
         if not results:
             return "No relevant files found for your query."
 
-        # Format results
         content_parts = []
-        content_parts.append(f"Found {len(results)} relevant files for query: '{query}'\n")
-
         for i, result in enumerate(results, 1):
-            content_parts.append(f"\n## {i}. {result['filename']} (score: {result['score']:.3f})")
-            content_parts.append("```")
-            # Truncate content if too long
-            content = result['content'][:1000] + "..." if len(result['content']) > 1000 else result['content']
-            content_parts.append(content)
-            content_parts.append("```")
+            filename = result["filename"]
+            start_line = result.get("start_row", "?")
+            end_line = result.get("end_row", "?")
+            start_col = result.get("start_col", "?")
+            end_col = result.get("end_col", "?")
+            score = result.get("score", 0.0)
+            content_parts.append(
+                f"\n## {i}. {filename} (score: {score:.3f}) [lines {start_line}-{end_line}, cols {start_col}-{end_col}]"
+            )
+            content_parts.append(result["content"])
 
         return "\n".join(content_parts)
 
@@ -49,7 +48,8 @@ def vectorspace_search(
 
 
 def main():
-    mcp.run(transport=str(sys.argv[1]) if len(sys.argv) > 1 else 'stdio') # type: ignore
+    setup_logger()
+    mcp.run(transport=str(sys.argv[1]) if len(sys.argv) > 1 else "stdio")  # type: ignore
 
 
 if __name__ == "__main__":
