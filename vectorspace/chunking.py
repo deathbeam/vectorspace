@@ -5,7 +5,6 @@ from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-# List of semantic node types (from your Lua resources.lua)
 OUTLINE_TYPES = [
     "local_function",
     "function_item",
@@ -37,7 +36,6 @@ def get_language_from_filename(filename: str) -> str:
 
 
 def chunk_with_overlap(text: str, chunk_size=256, overlap=32) -> List[Dict[str, Any]]:
-    # Precompute line/col for each character
     positions = []
     line, col = 0, 0
     for c in text:
@@ -73,7 +71,7 @@ def chunk_with_overlap(text: str, chunk_size=256, overlap=32) -> List[Dict[str, 
 
 def semantic_chunk_nodes(text: str, language: str) -> List[Dict[str, Any]]:
     try:
-        parser = get_parser(language)
+        parser = get_parser(language)  # type: ignore
     except Exception:
         logger.warning(f"Could not get parser for language '{language}', falling back to text chunks.")
         return []
