@@ -94,7 +94,7 @@ def sync_files(collection: Collection, dir_path: str) -> List[str]:
 class VectorspaceCore:
     def __init__(self, cache_path: str | None = None):
         if cache_path is None:
-            cache_path = os.getenv("HOME") + "/.cache/chromadb"
+            cache_path = os.getenv("HOME") + "/.cache/vectorspace"
 
         os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
@@ -171,10 +171,12 @@ class VectorspaceCore:
             out.append(
                 {
                     "filename": metadata.get("filename"),
-                    "start_byte": metadata.get("start_byte", 0),
-                    "end_byte": metadata.get("end_byte", 0),
                     "content": document,
                     "score": max(0.0, min(1.0, 1.0 - (distance / 2.0))),
+                    "start_row": metadata.get("start_row", 0),
+                    "end_row": metadata.get("end_row", 0),
+                    "start_col": metadata.get("start_col", 0),
+                    "end_col": metadata.get("end_col", 0),
                 }
             )
 

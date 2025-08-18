@@ -20,6 +20,10 @@ class QueryData(BaseModel):
     filename: str
     content: str
     score: float
+    start_row: int = 0
+    end_row: int = 0
+    start_col: int = 0
+    end_col: int = 0
 
 
 app = FastAPI(title="vectorspace")
@@ -53,7 +57,16 @@ def query(query: Query) -> List[QueryData]:
     results = vectorspace_core.query(query.dir, query.text, query.max)
 
     return [
-        QueryData(filename=result["filename"], content=result["content"], score=result["score"]) for result in results
+        QueryData(
+            filename=result["filename"],
+            content=result["content"],
+            score=result["score"],
+            start_row=result.get("start_row", 0),
+            end_row=result.get("end_row", 0),
+            start_col=result.get("start_col", 0),
+            end_col=result.get("end_col", 0),
+        )
+        for result in results
     ]
 
 

@@ -40,6 +40,13 @@ and then
 vectorspace
 ```
 
+### Formatting
+
+```bash
+uvx ruff format
+uvx ruff check --fix
+```
+
 ## API docs
 
 ```
