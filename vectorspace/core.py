@@ -43,7 +43,7 @@ def read_file(collection: Collection, file_path: str):
         documents = [chunk["body"] for chunk in chunks]
         metadatas = [{**chunk["metadata"], "mtime": mtime, "filename": file_path} for chunk in chunks]
         ids = [
-            f"{file_path}:{chunk['metadata'].get('start_byte', 0)}:{chunk['metadata'].get('end_byte', 0)}"
+            f"{file_path}:{chunk['metadata'].get('start_row', 0)}:{chunk['metadata'].get('start_col', 0)}:{chunk['metadata'].get('end_row', 0)}:{chunk['metadata'].get('end_col', 0)}"
             for chunk in chunks
         ]
         collection.upsert(

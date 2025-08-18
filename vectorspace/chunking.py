@@ -1,6 +1,9 @@
+import logging
 from pygments.lexers import get_lexer_for_filename
-from tree_sitter_languages import get_parser
+from tree_sitter_language_pack import get_parser
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 # List of semantic node types (from your Lua resources.lua)
 OUTLINE_TYPES = [
@@ -34,18 +37,33 @@ def get_language_from_filename(filename: str) -> str:
 
 
 def chunk_with_overlap(text: str, chunk_size=256, overlap=32) -> List[Dict[str, Any]]:
+    # Precompute line/col for each character
+    positions = []
+    line, col = 0, 0
+    for c in text:
+        positions.append((line, col))
+        if c == "\n":
+            line += 1
+            col = 0
+        else:
+            col += 1
+
     chunks = []
     start = 0
     while start < len(text):
         end = min(start + chunk_size, len(text))
         chunk_text = text[start:end]
+        start_row, start_col = positions[start] if start < len(positions) else (0, 0)
+        end_row, end_col = positions[end - 1] if end - 1 < len(positions) else (line, col)
         chunks.append(
             {
                 "body": chunk_text,
                 "metadata": {
-                    "chunk_start": start,
-                    "chunk_end": end,
                     "type": "text",
+                    "start_row": start_row,
+                    "end_row": end_row,
+                    "start_col": start_col,
+                    "end_col": end_col,
                 },
             }
         )
@@ -57,7 +75,9 @@ def semantic_chunk_nodes(text: str, language: str) -> List[Dict[str, Any]]:
     try:
         parser = get_parser(language)
     except Exception:
+        logger.warning(f"Could not get parser for language '{language}', falling back to text chunks.")
         return []
+
     tree = parser.parse(bytes(text, "utf8"))
     root = tree.root_node
     chunks = []
